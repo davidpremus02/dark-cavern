@@ -294,7 +294,6 @@ function TweenToEgg()
     TweenTo(Egg - Vector3.new(0,100,0), true)
     wait(0.2)
     TweenTo(Egg + Vector3.new(0,8,0), true)
-    print(9)
 end
 
 local Worlds = {}
@@ -398,12 +397,19 @@ local Tabs = {
                 RepeatDelay = 10,
                 Callback = function(ElementData)
                     if Settings[ElementData.Name] == "Minimal" then
-                        local InvalidBoosts = Data.Boosts.Luck
+                        local InvalidBoosts = {}
+                        for k, v in pairs(Data.Boosts.Luck) do
+                            InvalidBoosts[k] = v
+                        end
                         for _,active_boost in pairs(LocalData:GetData("ActiveBoosts")) do
-                            for _,boost in pairs(InvalidBoosts) do
+                            for _,boost in pairs(Data.Boosts.Luck) do
                                 if active_boost[1] == boost then
-                                    if active_boost[2] > 300 then
-                                        RemoveItemByValue(InvalidBoosts, boost)
+                                    if active_boost[2] > 450 then
+                                        for index,invalid_boost in pairs(InvalidBoosts) do
+                                            if invalid_boost == boost then
+                                                table.remove(InvalidBoosts, index)
+                                            end
+                                        end
                                     end
                                     break
                                 end
@@ -418,7 +424,6 @@ local Tabs = {
                                     end
                                 end
                             end
-                            -- print(LowestDuration)
                             if LowestDuration then
                                 game:GetService("ReplicatedStorage").Events.UseBoost:FireServer(invalid_boost, LowestDuration)
                             end
@@ -668,7 +673,6 @@ local Tabs = {
                 Type = "Dropdown",
                 Options = Data.RemoteUis,
                 Callback = function(Value)
-                    print(Value)
                     local Ui = game:GetService("Players")[username].PlayerGui.ScreenGui:FindFirstChild(Value)
                     Ui.Visible = true
                     Ui.Frame.Close.Frame.Button.MouseButton1Click:Connect(function()
@@ -779,7 +783,6 @@ for _,tab in Tabs do
                 if not elementData.Volatile then Element.Callback({Settings[elementData.Name]}) end
             elseif elementData.Type == "Slider" then
                 local CurrentValue = elementData.CurrentValue or elementData.Range[1]
-                print(CurrentValue)
                 if not elementData.Volatile and Settings[elementData.Name] then CurrentValue = Settings[elementData.Name] end
                 local Element = Tab:CreateSlider({
                     Name = Name..":",
