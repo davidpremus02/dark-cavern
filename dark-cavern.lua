@@ -395,7 +395,7 @@ local Tabs = {
             {Name="LuckBoostEnabler",
                 Type = "Dropdown",
                 Options = {false, "Minimal", "Omega Limited"},
-                RepeatDelay = 60,
+                RepeatDelay = 10,
                 Callback = function(ElementData)
                     if Settings[ElementData.Name] == "Minimal" then
                         local InvalidBoosts = Data.Boosts.Luck
@@ -418,6 +418,7 @@ local Tabs = {
                                     end
                                 end
                             end
+                            -- print(LowestDuration)
                             if LowestDuration then
                                 game:GetService("ReplicatedStorage").Events.UseBoost:FireServer(invalid_boost, LowestDuration)
                             end
