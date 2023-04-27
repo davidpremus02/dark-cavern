@@ -4,6 +4,7 @@ repeat task.wait(0.1) until game:IsLoaded()
 --------------------------------------------------------------
 local Debug = false
 local SpinToWin = false
+local EventShop = true
 local TwoWeekChallenges = false
 
 local Data = {
@@ -167,7 +168,7 @@ local Data = {
     RemoteUis = {
         "PetEnchant", "RebirthShop", "Forge",
         "AutoDelete", "GemEnchant", "Achievements",
-        "Factory", "Quests", "EventShop", "TwoWeekChallenges"
+        "Factory", "Quests"
     },
 }
 --------------------------------------------------------------
@@ -175,6 +176,10 @@ local Data = {
 
 if SpinToWin then
     table.insert(Data.RemoteUis,"SpinToWin") end
+if EventShop then
+    table.insert(Data.RemoteUis,"EventShop") end
+if TwoWeekChallenges then
+    table.insert(Data.RemoteUis,"TwoWeekChallenges") end
 
 local LocalPlayer = game.Players.LocalPlayer
 local username = LocalPlayer.Name
@@ -228,14 +233,6 @@ spawn(function()
 end)
 
 -- Functions
-function RemoveItemByValue(tbl, value)
-    for i = #tbl, 1, -1 do
-      if tbl[i] == value then
-        table.remove(tbl, i)
-      end
-    end
-  end
-
 function FormatToNumber(text)
     text = string.gsub(string.gsub(text, " Value", ""), ",", "")
     for index,letter in pairs({"k", "M", "B", "T"}) do
@@ -270,13 +267,13 @@ function TweenTo(Location, wait_to_end)
 end
 
 function TweenToEgg()
-    if Settings.EggToHatch == "Deactivated" then return end
-    local Egg = game:GetService("Workspace").Eggs[Settings.EggToHatch].EggName.CFrame
+    if Settings["EggToHatch"] == "Deactivated" then return end
+    local Egg = game:GetService("Workspace").Eggs[Settings["EggToHatch"]].EggName.CFrame
     if Distance(LocalPlayer.Character.HumanoidRootPart.Position,Egg) <= 5 then return end
     for _,world in pairs(Data.Worlds) do
         local broke = false
         for _,egg in pairs(world.Eggs) do
-            if Settings.EggToHatch == egg.Name then
+            if Settings["EggToHatch"] == egg.Name then
                 local world_position = game:GetService("Workspace").Teleports[world.Name].Position
                 if Distance(LocalPlayer.Character.HumanoidRootPart.Position,Egg) > Distance(world_position,Egg) then
                     ReplicatedStorage.Events.Teleport:FireServer(world.Name)
@@ -339,6 +336,8 @@ if (readfile and isfile and isfile(ProfileSettingsName)) then
 elseif not isfile(ProfileSettingsName) then
     Print(4,"Profile settings were not found.",false)
 end
+
+if Settings["GoToEggOnStart"] then TweenToEgg() end
 
 if not _G.DarkCavernInstanceId then _G.DarkCavernInstanceId = 0
 else _G.DarkCavernInstanceId = _G.DarkCavernInstanceId + 1 end
@@ -404,7 +403,7 @@ local Tabs = {
                         for _,active_boost in pairs(LocalData:GetData("ActiveBoosts")) do
                             for _,boost in pairs(Data.Boosts.Luck) do
                                 if active_boost[1] == boost then
-                                    if active_boost[2] > 450 then
+                                    if active_boost[2] > 300 then
                                         for index,invalid_boost in pairs(InvalidBoosts) do
                                             if invalid_boost == boost then
                                                 table.remove(InvalidBoosts, index)
@@ -438,7 +437,6 @@ local Tabs = {
                 CommingSoon = true,
                 Type = "Toggle",
                 RepeatDelay = 600,
-                Callback = nil,
             },
             {Name="DepositShards",
                 Type = "Toggle",
@@ -505,9 +503,9 @@ local Tabs = {
                     if Module:get() then
                         local SelectedCell = Module:get().Cell
                         ReplicatedStorage.Events.MineBlock:FireServer(SelectedCell)
-                        if Settings.DownFast then
-                            for i=0,Settings.DownFastAmount do
-                                wait(Settings.DownFastDelay)
+                        if Settings["DownFast"] then
+                            for i=0,Settings["DownFastAmount"] do
+                                wait(Settings["DownFastDelay"])
                                 ReplicatedStorage.Events.MineBlock:FireServer(SelectedCell+Vector3.new(0, i+1, 0))
                             end
                         end
@@ -516,18 +514,23 @@ local Tabs = {
             },
             {Name="CollapseProtection",
                 Type = "Toggle",
-                RepeatDelay = 0.1,
+                RepeatDelay = 0,
                 Callback = function()
                     local LastCFrame = LocalPlayer.Character.HumanoidRootPart.CFrame
-                    if BlocksUntilCollapse == 0 then
-                        LastCFrame = CFrame.new(Vector3.new(LastCFrame.X,LocalPlayer.Character.HumanoidRootPart.Position.Y,LastCFrame.Z),LastCFrame.LookVector)
-                        wait(35)
-                        local Under = CFrame.new(LocalPlayer.Character.HumanoidRootPart.Position.X,LastCFrame.Y-100,LocalPlayer.Character.HumanoidRootPart.Position.Z)
-                        TweenTo(Under, true)
-                        wait(0.1)
-                        TweenTo(CFrame.new(LastCFrame.X,Under.Y,LastCFrame.Z), true)
-                        wait(0.1)
-                        TweenTo(LastCFrame, true)
+                    for i=1,10 do
+                        wait(1)
+                        if LocalPlayer.PlayerGui.ScreenGui:FindFirstChild("Prompt") then
+                            LocalPlayer.PlayerGui.ScreenGui.Prompt:Destroy()
+                            LastCFrame = CFrame.new(Vector3.new(LastCFrame.X,LocalPlayer.Character.HumanoidRootPart.Position.Y,LastCFrame.Z),LastCFrame.LookVector)
+                            wait(35)
+                            local Under = CFrame.new(LocalPlayer.Character.HumanoidRootPart.Position.X,LastCFrame.Y-100,LocalPlayer.Character.HumanoidRootPart.Position.Z)
+                            TweenTo(Under, true)
+                            wait(0.1)
+                            TweenTo(CFrame.new(LastCFrame.X,Under.Y,LastCFrame.Z), true)
+                            wait(0.1)
+                            TweenTo(LastCFrame, true)
+                            break
+                        else LastCFrame = LocalPlayer.Character.HumanoidRootPart.CFrame end
                     end
                 end,
             },
@@ -579,7 +582,7 @@ local Tabs = {
                                 ReplicatedStorage.Events.MultiRebirth:FireServer(Settings[ElementData.Name]) 
                             end
                             wait(1)
-                            if Settings.RebirthTeleportBack then
+                            if Settings["RebirthTeleportBack"] then
                                 local duration = TweenTo(Location, true)
                                 local MinWait = 2 - duration
                                 if MinWait < 0 then MinWait = 0 end
@@ -602,7 +605,7 @@ local Tabs = {
                 Options = {false, unpack(Eggs)},
                 RepeatDelay = 0,
                 Callback = function()
-                    ReplicatedStorage.Events.OpenEgg:FireServer(Settings.EggToHatch,Settings.TripleHatch,true)
+                    ReplicatedStorage.Events.OpenEgg:FireServer(Settings["EggToHatch"],Settings["TripleHatch"],true)
                 end,
             },
             {Name="TripleHatch",
@@ -620,13 +623,13 @@ local Tabs = {
                 Options = {false, unpack(Eggs)},
                 RepeatDelay = 10,
                 Callback = function()
-                    if Settings.EggsLeft ~= "Deactivated" then
+                    if Settings["EggsLeft"] ~= "Deactivated" then
                         for _,world in pairs(Data.Worlds) do
                             for _,egg in pairs(world.Eggs) do
-                                if Settings.EggToHatch == egg.Name then
+                                if Settings["EggToHatch"] == egg.Name then
                                     local EggsLeft = math.floor(LocalData:GetData(world.Currency) / FormatToNumber(egg.Price))
                                     if EggsLeft < 100 then
-                                        Elements.EggToHatch.Element:Set(Settings.BackupEggToHatch)
+                                        Elements.EggToHatch.Element:Set(Settings["BackupEggToHatch"])
                                         Elements.BackupEggToHatch:Set("Deactivated")
                                         TweenToEgg()
                                     end
@@ -636,10 +639,10 @@ local Tabs = {
                     end
                 end,
             },
-            {Name="TeleportOnStart",
+            {Name="GoToEggOnStart",
                 Type = "Toggle",
             },
-            {Name="TeleportNow",
+            {Name="GoToEgg",
                 Type = "Button",
                 Callback = function()
                     TweenToEgg()
@@ -651,29 +654,39 @@ local Tabs = {
         Elements = {
             {Name="Teleports",Type="Section"},
             {Name="World",
-                Volatile = true,
                 Type = "Dropdown",
                 Options = Worlds,
-                Callback = function(Value)
-                    ReplicatedStorage.Events.Teleport:FireServer(Value)
+            },
+            {Name="TeleportToWorld",
+                Type = "Button",
+                Callback = function()
+                    ReplicatedStorage.Events.Teleport:FireServer(Settings["World"])
                 end,
             },
             {Name="Layer",
-                Volatile = true,
                 Type = "Dropdown",
                 Options = Layers,
-                Callback = function(Value)
-                    ReplicatedStorage.Events.Teleport:FireServer(Value.."Sell")
-                    wait(1)
-                    ReplicatedStorage.Events.Teleport:FireServer(Value)
+            },
+            {Name="TeleportToLayer",
+                Type = "Button",
+                Callback = function()
+                    ReplicatedStorage.Events.Teleport:FireServer(Settings["Layer"])
+                end,
+            },
+            {Name="UnlockLayer",
+                Type = "Button",
+                Callback = function()
+                    ReplicatedStorage.Events.Teleport:FireServer(Settings["Layer"].."Sell")
                 end,
             },
             {Name="RemoteUi's",
-                Volatile = true,
                 Type = "Dropdown",
                 Options = Data.RemoteUis,
-                Callback = function(Value)
-                    local Ui = game:GetService("Players")[username].PlayerGui.ScreenGui:FindFirstChild(Value)
+            },
+            {Name="OpenRemoteUi",
+                Type = "Button",
+                Callback = function()
+                    local Ui = game:GetService("Players")[username].PlayerGui.ScreenGui:FindFirstChild(Settings["RemoteUi's"])
                     Ui.Visible = true
                     Ui.Frame.Close.Frame.Button.MouseButton1Click:Connect(function()
                         Ui.Visible = false
@@ -743,6 +756,13 @@ function Run(ElementData, DisabledState, Value)
     else Print(4,"Executing single "..ElementData.Name,false) ElementData.Callback(Value, ElementData) end
 end
 
+function AsyncSetting(ElementData, Default)
+    if ElementData.Volatile then return Default end
+    if Settings[ElementData.Name] then return Settings[ElementData.Name] end
+    Settings[ElementData.Name] = Default
+    return Default
+end
+
 for _,tab in Tabs do
     local Tab = Window:CreateTab(tab.Name)
     for _,elementData in tab.Elements do
@@ -751,8 +771,7 @@ for _,tab in Tabs do
             local Name = string.gsub(elementData.Name, "%u", " %0")
             if elementData.CommingSoon then Name = Name.." (Comming Soon)" end
             if elementData.Type == "Toggle" then
-                local CurrentValue = false
-                if not elementData.Volatile and Settings[elementData.Name] then CurrentValue = Settings[elementData.Name] end
+                local CurrentValue = AsyncSetting(elementData, false)
                 local Element = Tab:CreateToggle({
                     Name = Name,
                     CurrentValue = CurrentValue,
@@ -768,8 +787,7 @@ for _,tab in Tabs do
                 for index,option in pairs(elementData.Options) do
                     if not option then elementData.Options[index] = "Deactivated" end
                 end
-                local CurrentValue = elementData.Options[1]
-                if not elementData.Volatile and Settings[elementData.Name] then CurrentValue = Settings[elementData.Name] end
+                local CurrentValue = AsyncSetting(elementData, elementData.Options[1])
                 local Element = Tab:CreateDropdown({
                     Name = Name..":",
                     Options = elementData.Options,
@@ -782,8 +800,7 @@ for _,tab in Tabs do
                 Elements[elementData.Name] = {elementData=elementData,Element=Element}
                 if not elementData.Volatile then Element.Callback({Settings[elementData.Name]}) end
             elseif elementData.Type == "Slider" then
-                local CurrentValue = elementData.CurrentValue or elementData.Range[1]
-                if not elementData.Volatile and Settings[elementData.Name] then CurrentValue = Settings[elementData.Name] end
+                local CurrentValue = AsyncSetting(elementData, elementData.CurrentValue or elementData.Range[1])
                 local Element = Tab:CreateSlider({
                     Name = Name..":",
                     Range = elementData.Range,
