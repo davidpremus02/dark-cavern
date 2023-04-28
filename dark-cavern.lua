@@ -197,31 +197,34 @@ game:GetService("Players").LocalPlayer.Idled:connect(function()
 VirtualUser:CaptureController()VirtualUser:ClickButton2(Vector2.new())
 end)
 
+LocalPlayer.PlayerGui.ScreenGui.HUD.Debug:FindFirstChild("Frame")
+
 -- Debug element: blocks until collapse (currectly broken af)
 local BlocksUntilCollapse = nil
+if LocalPlayer.PlayerGui.ScreenGui.HUD.Debug:FindFirstChild("Debug17") then LocalPlayer.PlayerGui.ScreenGui.HUD.Debug:FindFirstChild("Debug17"):Destroy() end
+local Debug17 = Instance.new("Frame", LocalPlayer.PlayerGui.ScreenGui.HUD.Debug)
+Debug17.Name = "Debug17"
+Debug17.BackgroundColor3 = Color3.new(0,0,0)
+Debug17.BackgroundTransparency = 0.25
+Debug17.BorderSizePixel = 0
+Debug17.LayoutOrder = 17
+Debug17.Size = UDim2.new(0,236,0,40)
+local Debug17Label = Instance.new("TextLabel", Debug17)
+Debug17Label.Name = "Label"
+Debug17Label.AnchorPoint = Vector2.new(0.5,0.5)
+Debug17Label.BackgroundColor3 = Color3.new(0,0,0)
+Debug17Label.BackgroundTransparency = 1
+Debug17Label.BorderSizePixel = 0
+Debug17Label.Position = UDim2.new(0.5,0,0.5,0)
+Debug17Label.Font = Enum.Font.GothamBlack
+Debug17Label.Size = UDim2.new(1,-12,1,-12)
+Debug17Label.TextColor3 = Color3.new(1,1,1)
+Debug17Label.TextSize = 22
+Debug17Label.TextXAlignment = Enum.TextXAlignment.Left
+Debug17Label.RichText = true
+local Sign = game:GetService("Workspace").Worlds:FindFirstChild("The Overworld").Sign.Display.SurfaceGui.Info
+    
 spawn(function()
-    if LocalPlayer.PlayerGui.ScreenGui.HUD.Debug:FindFirstChild("Debug17") then LocalPlayer.PlayerGui.ScreenGui.HUD.Debug:FindFirstChild("Debug17"):Destroy() end
-    local Debug17 = Instance.new("Frame", LocalPlayer.PlayerGui.ScreenGui.HUD.Debug)
-    Debug17.Name = "Debug17"
-    Debug17.BackgroundColor3 = Color3.new(0,0,0)
-    Debug17.BackgroundTransparency = 0.25
-    Debug17.BorderSizePixel = 0
-    Debug17.LayoutOrder = 17
-    Debug17.Size = UDim2.new(0,236,0,40)
-    local Debug17Label = Instance.new("TextLabel", Debug17)
-    Debug17Label.Name = "Label"
-    Debug17Label.AnchorPoint = Vector2.new(0.5,0.5)
-    Debug17Label.BackgroundColor3 = Color3.new(0,0,0)
-    Debug17Label.BackgroundTransparency = 1
-    Debug17Label.BorderSizePixel = 0
-    Debug17Label.Position = UDim2.new(0.5,0,0.5,0)
-    Debug17Label.Font = Enum.Font.GothamBlack
-    Debug17Label.Size = UDim2.new(1,-12,1,-12)
-    Debug17Label.TextColor3 = Color3.new(1,1,1)
-    Debug17Label.TextSize = 22
-    Debug17Label.TextXAlignment = Enum.TextXAlignment.Left
-    Debug17Label.RichText = true
-    local Sign = game:GetService("Workspace").Worlds:FindFirstChild("The Overworld").Sign.Display.SurfaceGui.Info
     while true do
         local BlocksUntilCollapseText = Sign.Text:gsub(" Blocks until Collapse", "")
         BlocksUntilCollapse = BlocksUntilCollapseText:gsub(",", "")
@@ -347,6 +350,7 @@ local Elements = {}
 local Tabs = {
     {Name="Farming",
         Elements = {
+            {Name="General",Type="Section"},
             {Name="SmartFactory",
                 Type = "Toggle",
                 RepeatDelay = 60,
@@ -380,7 +384,7 @@ local Tabs = {
                     ReplicatedStorage.Functions.ClaimGroupBenefits:InvokeServer()
                 end,
             },
-            {Name="SmartAchievements",
+            {Name="ClaimAchievements",
                 Type = "Toggle",
                 RepeatDelay = 600,
                 Callback = function()
@@ -424,7 +428,7 @@ local Tabs = {
                                 end
                             end
                             if LowestDuration then
-                                game:GetService("ReplicatedStorage").Events.UseBoost:FireServer(invalid_boost, LowestDuration)
+                                ReplicatedStorage.Events.UseBoost:FireServer(invalid_boost, LowestDuration)
                             end
                         end
                     elseif Settings[ElementData.Name] == "Omega Limited" then
@@ -442,10 +446,9 @@ local Tabs = {
                 Type = "Toggle",
                 RepeatDelay = 10,
                 Callback = function()                
-                    game:GetService("ReplicatedStorage").Events.DepositShards:FireServer()
+                    ReplicatedStorage.Events.DepositShards:FireServer()
                 end,
             },
-            
             {Name="Event",Type="Section"},
             {Name="BuyEventBoosts",
                 Type = "Toggle",
@@ -519,7 +522,8 @@ local Tabs = {
                     local LastCFrame = LocalPlayer.Character.HumanoidRootPart.CFrame
                     for i=1,10 do
                         wait(1)
-                        if LocalPlayer.PlayerGui.ScreenGui:FindFirstChild("Prompt") then
+                        local Prompt = LocalPlayer.PlayerGui.ScreenGui:FindFirstChild("Prompt")
+                        if Prompt and Prompt.Frame.Title.Text == "Collapsed!" then
                             LocalPlayer.PlayerGui.ScreenGui.Prompt:Destroy()
                             LastCFrame = CFrame.new(Vector3.new(LastCFrame.X,LocalPlayer.Character.HumanoidRootPart.Position.Y,LastCFrame.Z),LastCFrame.LookVector)
                             wait(35)
@@ -679,6 +683,7 @@ local Tabs = {
                     ReplicatedStorage.Events.Teleport:FireServer(Settings["Layer"].."Sell")
                 end,
             },
+            {Name="Ui's",Type="Section"},
             {Name="RemoteUi's",
                 Type = "Dropdown",
                 Options = Data.RemoteUis,
@@ -694,6 +699,19 @@ local Tabs = {
                     end)
                 end,
             },
+            {Name="DestroyNewItemPrompts",
+                Type = "Toggle",
+                RepeatDelay = 0,
+                Callback = function(ElementData)
+                    local ElementInstanceId = ElementData.InstanceId
+                    local Prompt = LocalPlayer.PlayerGui.ScreenGui:WaitForChild("Prompt")
+                    if Prompt.Frame.Title.Text == "New Items" then
+                        if Settings[ElementData.Name] and ElementInstanceId==ElementData.InstanceId and DarkCavernInstanceId==_G.DarkCavernInstanceId then
+                            Prompt:Destroy()
+                        end
+                    end
+                end,
+            },
             {Name="OtherGuis",Type="Section"},
             {Name="Zeerox'sGui",
                 Type = "Button",
@@ -707,6 +725,7 @@ local Tabs = {
     },
     {Name="Settings",
         Elements = {
+            {Name="PerAccountSettings",Type="Section"},
             {Name="SaveSettings",
                 Type = "Button",
                 Callback = function()
