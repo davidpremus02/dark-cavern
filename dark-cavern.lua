@@ -1,4 +1,4 @@
-if game.PlaceId ~= 9551640993 then os.exit() end
+if game.PlaceId ~= 9551640993 then return end
 repeat task.wait(0.1) until game:IsLoaded()
 
 --------------------------------------------------------------
@@ -138,6 +138,7 @@ local Data = {
                 {Name="Bunny Egg", Price="300M"},
                 {Name="Critter Egg", Price="600M"},
                 {Name="Floral Egg", Price="1.5B"},
+                {Name="Guardian Egg", Price="2.75B"},
             }
         }
     },
@@ -193,44 +194,32 @@ local Settings = {}
 
 -- AntiAFK
 local VirtualUser=game:GetService("VirtualUser")
-game:GetService("Players").LocalPlayer.Idled:connect(function()
+game:GetService("Players").LocalPlayer.Idled:Connect(function()
 VirtualUser:CaptureController()VirtualUser:ClickButton2(Vector2.new())
 end)
 
-LocalPlayer.PlayerGui.ScreenGui.HUD.Debug:FindFirstChild("Frame")
+if LocalPlayer.PlayerGui.ScreenGui.HUD.Debug:FindFirstChild("Spliter17") then LocalPlayer.PlayerGui.ScreenGui.HUD.Debug:FindFirstChild("Spliter17"):Destroy() end
+local Spliter = LocalPlayer.PlayerGui.ScreenGui.HUD.Debug:FindFirstChild("Frame")
+local NewSpliter = Spliter:Clone()
+NewSpliter.Name = "Spliter17"
+NewSpliter.LayoutOrder = 17
+NewSpliter.Parent = Spliter.Parent
 
 -- Debug element: blocks until collapse (currectly broken af)
 local BlocksUntilCollapse = nil
-if LocalPlayer.PlayerGui.ScreenGui.HUD.Debug:FindFirstChild("Debug17") then LocalPlayer.PlayerGui.ScreenGui.HUD.Debug:FindFirstChild("Debug17"):Destroy() end
-local Debug17 = Instance.new("Frame", LocalPlayer.PlayerGui.ScreenGui.HUD.Debug)
-Debug17.Name = "Debug17"
-Debug17.BackgroundColor3 = Color3.new(0,0,0)
-Debug17.BackgroundTransparency = 0.25
-Debug17.BorderSizePixel = 0
-Debug17.LayoutOrder = 17
-Debug17.Size = UDim2.new(0,236,0,40)
-local Debug17Label = Instance.new("TextLabel", Debug17)
-Debug17Label.Name = "Label"
-Debug17Label.AnchorPoint = Vector2.new(0.5,0.5)
-Debug17Label.BackgroundColor3 = Color3.new(0,0,0)
-Debug17Label.BackgroundTransparency = 1
-Debug17Label.BorderSizePixel = 0
-Debug17Label.Position = UDim2.new(0.5,0,0.5,0)
-Debug17Label.Font = Enum.Font.GothamBlack
-Debug17Label.Size = UDim2.new(1,-12,1,-12)
-Debug17Label.TextColor3 = Color3.new(1,1,1)
-Debug17Label.TextSize = 22
-Debug17Label.TextXAlignment = Enum.TextXAlignment.Left
-Debug17Label.RichText = true
-local Sign = game:GetService("Workspace").Worlds:FindFirstChild("The Overworld").Sign.Display.SurfaceGui.Info
-    
+if LocalPlayer.PlayerGui.ScreenGui.HUD.Debug:FindFirstChild("Debug18") then LocalPlayer.PlayerGui.ScreenGui.HUD.Debug:FindFirstChild("Debug18"):Destroy() end
+local Debug16 = LocalPlayer.PlayerGui.ScreenGui.HUD.Debug:FindFirstChild("Debug16")
+local Debug18 = Debug16:Clone()
+Debug18.Name = "Debug18"
+Debug18.LayoutOrder = 18
 spawn(function()
     while true do
-        local BlocksUntilCollapseText = Sign.Text:gsub(" Blocks until Collapse", "")
+        local BlocksUntilCollapseText = game:GetService("Workspace").Worlds["The Overworld"].Sign.Display.SurfaceGui.Info.Text:gsub(" Blocks until Collapse", "")
         BlocksUntilCollapse = BlocksUntilCollapseText:gsub(",", "")
         local red = 255-math.floor(255 * (BlocksUntilCollapse / 16_000))
-        Debug17Label.Text = "Blocks until Collapse: <font color='rgb("..red..", "..255-red..", 0)'>" .. BlocksUntilCollapseText .. "</font>"
-        Debug17.Size = UDim2.new(0,Debug17Label.TextBounds.X *1.93+12,0,40)
+        Debug18.Label.Text = "Blocks until Collapse: <font color='rgb("..red..", "..255-red..", 0)'>" .. BlocksUntilCollapseText .. "</font>"
+        if not Debug18.Parent then Debug18.Parent = Debug16.Parent end
+        Debug18.Size = UDim2.new(0,Debug18.Label.TextBounds.X+122,0,Debug18.Size.Y.Offset)
         wait(0.5)
     end
 end)
@@ -785,7 +774,11 @@ end
 for _,tab in Tabs do
     local Tab = Window:CreateTab(tab.Name)
     for _,elementData in tab.Elements do
-        if elementData.Dependancy ~= false then
+        if not elementData.Name then
+            Print(3,"An element is missing it's \"Name\" property.",true)
+        elseif not elementData.Type then
+            Print(3,"Element \""..elementData.Name.."\" is missing it's \"Type\" property.",true)
+        elseif elementData.Dependancy ~= false then
             elementData.InstanceId = 0
             local Name = string.gsub(elementData.Name, "%u", " %0")
             if elementData.CommingSoon then Name = Name.." (Comming Soon)" end
@@ -841,7 +834,7 @@ for _,tab in Tabs do
             elseif elementData.Type == "Section" then
                 Tab:CreateSection(Name)
             else
-                Print(3,"Invalid (pre-determined) element type: "..elementData.Name.." - \""..elementData.Type.."\".",false)
+                Print(3,"Invalid (pre-determined) element type: "..elementData.Name.." - \""..elementData.Type.."\".",true)
             end
         end
     end
