@@ -5,7 +5,7 @@ repeat task.wait(0.1) until game:IsLoaded()
 local Debug = false
 local SpinToWin = false
 local EventShop = true
-local TwoWeekChallenges = false
+local TwoWeekChallenges = true
 
 local Data = {
     Worlds = {
