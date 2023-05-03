@@ -30,7 +30,7 @@ local Data = {
                 {Name="Volcanic Egg", Price="4.5M"},
                 {Name="Underworld Egg", Price="10M"},
                 {Name="Crystal Egg", Price="45M"}
-            }
+            },
         },
         {Name="Cyber Galaxy",
             Currency = "CyberTokens",
@@ -47,7 +47,7 @@ local Data = {
                 {Name="Cyborg Egg", Price="32M"},
                 {Name="Glitched Egg", Price="55M"},
                 {Name="Holographic Egg", Price="90M"},
-            }
+            },
         },
         {Name="Atlantis",
             Currency = "Shells",
@@ -62,7 +62,7 @@ local Data = {
                 {Name="Snorkel Egg", Price="3.25M"},
                 {Name="Dark Coral Egg", Price="120M"},
                 {Name="Atlantis Egg", Price="250"},
-            }
+            },
         },
         {Name="Candyland",
             Currency = "Candy",
@@ -78,7 +78,7 @@ local Data = {
                 {Name="Candy Egg", Price="65M"},
                 {Name="Chocolate Egg", Price="99M"},
                 {Name="Pastry Egg", Price="150M"},
-            }
+            },
         },
         {Name="Toyland",
             Currency = "Bricks",
@@ -94,7 +94,7 @@ local Data = {
                 {Name="Toy Egg", Price="65M"},
                 {Name="Pixel Egg", Price="100M"},
                 {Name="Cartoon Egg", Price="500M"},
-            }
+            },
         },
         {Name="Mystic Forest",
             Currency = "Crystals",
@@ -107,7 +107,7 @@ local Data = {
                 {Name="Mossy Egg", Price="250k"},
                 {Name="Mushroom Egg", Price="20M"},
                 {Name="Element Egg", Price="300M"},
-            }
+            },
         },
         {Name="Rainbow Land",
             Currency = "Stars",
@@ -121,7 +121,7 @@ local Data = {
                 {Name="Yellow Egg", Price="100M"},
                 {Name="Fancy Egg", Price="300M"},
                 {Name="Comet Egg", Price="900M"},
-            }
+            },
         },
         -- Limited
         {Name="Spring World",
@@ -139,7 +139,7 @@ local Data = {
                 {Name="Critter Egg", Price="600M"},
                 {Name="Floral Egg", Price="1.5B"},
                 {Name="Guardian Egg", Price="2.75B"},
-            }
+            },
         }
     },
     Achievements = {
@@ -176,55 +176,68 @@ local Data = {
 
 
 if SpinToWin then
-    table.insert(Data.RemoteUis,"SpinToWin") end
+    table.insert(Data.RemoteUis,"SpinToWin")
+end
 if EventShop then
-    table.insert(Data.RemoteUis,"EventShop") end
+    table.insert(Data.RemoteUis,"EventShop")
+end
 if TwoWeekChallenges then
-    table.insert(Data.RemoteUis,"TwoWeekChallenges") end
+    table.insert(Data.RemoteUis,"TwoWeekChallenges")
+end
+
+
+-- Stuff and stuff, yk?
+local Players = game:GetService("Players")
+local VirtualUser = game:GetService("VirtualUser")
+local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LoadModule = require(ReplicatedStorage.LoadModule)
+local LocalData = LoadModule("LocalData")
+local Constants = LoadModule("Constants")
+-- local ChunkUtil = LoadModule("ChunkUtil")
+-- local GetHatchSpeed = LoadModule("GetHatchSpeed")
+-- local GemEnchantments = LoadModule("GemEnchantments")
+local MineSelection = LoadModule("MineSelection")
+local GetData = LocalData:GetData()
 
 local LocalPlayer = game.Players.LocalPlayer
-local username = LocalPlayer.Name
-local ProfileSettingsName = "dark-cavern_"..username..".txt"
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-local LoadModule = require(game.ReplicatedStorage.LoadModule);
-local LocalData = LoadModule("LocalData");
+local ProfileSettingsName = "dark-cavern_"..LocalPlayer.Name..".txt"
+local DisabledOption = "Deactivated"
 
 local Settings = {}
 
+if not _G.DarkCavernInstanceId then _G.DarkCavernInstanceId = 0
+else _G.DarkCavernInstanceId = _G.DarkCavernInstanceId + 1 end
+local DarkCavernInstanceId = _G.DarkCavernInstanceId
+
 -- AntiAFK
-local VirtualUser=game:GetService("VirtualUser")
-game:GetService("Players").LocalPlayer.Idled:Connect(function()
-VirtualUser:CaptureController()VirtualUser:ClickButton2(Vector2.new())
-end)
-
-if LocalPlayer.PlayerGui.ScreenGui.HUD.Debug:FindFirstChild("Spliter17") then LocalPlayer.PlayerGui.ScreenGui.HUD.Debug:FindFirstChild("Spliter17"):Destroy() end
-local Spliter = LocalPlayer.PlayerGui.ScreenGui.HUD.Debug:FindFirstChild("Frame")
-local NewSpliter = Spliter:Clone()
-NewSpliter.Name = "Spliter17"
-NewSpliter.LayoutOrder = 17
-NewSpliter.Parent = Spliter.Parent
-
--- Debug element: blocks until collapse (currectly broken af)
-local BlocksUntilCollapse = nil
-if LocalPlayer.PlayerGui.ScreenGui.HUD.Debug:FindFirstChild("Debug18") then LocalPlayer.PlayerGui.ScreenGui.HUD.Debug:FindFirstChild("Debug18"):Destroy() end
-local Debug16 = LocalPlayer.PlayerGui.ScreenGui.HUD.Debug:FindFirstChild("Debug16")
-local Debug18 = Debug16:Clone()
-Debug18.Name = "Debug18"
-Debug18.LayoutOrder = 18
-spawn(function()
-    while true do
-        local BlocksUntilCollapseText = game:GetService("Workspace").Worlds["The Overworld"].Sign.Display.SurfaceGui.Info.Text:gsub(" Blocks until Collapse", "")
-        BlocksUntilCollapse = BlocksUntilCollapseText:gsub(",", "")
-        local red = 255-math.floor(255 * (BlocksUntilCollapse / 16_000))
-        Debug18.Label.Text = "Blocks until Collapse: <font color='rgb("..red..", "..255-red..", 0)'>" .. BlocksUntilCollapseText .. "</font>"
-        if not Debug18.Parent then Debug18.Parent = Debug16.Parent end
-        Debug18.Size = UDim2.new(0,Debug18.Label.TextBounds.X+122,0,Debug18.Size.Y.Offset)
-        wait(0.5)
-    end
+if _G.AntiAFK then _G.AntiAFK:Disconnect() end
+_G.AntiAFK = LocalPlayer.Idled:Connect(function()
+    VirtualUser:CaptureController()VirtualUser:ClickButton2(Vector2.new())
 end)
 
 -- Functions
+function NewSpliter(Order)
+    local OldSpliter = LocalPlayer.PlayerGui.ScreenGui.HUD.Debug:FindFirstChild("Spliter"..Order)
+    if OldSpliter then OldSpliter:Destroy() end
+    local Example = LocalPlayer.PlayerGui.ScreenGui.HUD.Debug:FindFirstChild("Frame")
+    local NewSpliter = Example:Clone()
+    NewSpliter.Name = "Spliter"..Order
+    NewSpliter.LayoutOrder = Order
+    NewSpliter.Parent = Example.Parent
+end
+
+function NewDebug(Order)
+    local OldDebug = LocalPlayer.PlayerGui.ScreenGui.HUD.Debug:FindFirstChild("Debug"..Order)
+    if OldDebug then OldDebug:Destroy() end
+    local Example = LocalPlayer.PlayerGui.ScreenGui.HUD.Debug:FindFirstChild("Debug16")
+    local NewDebug = Example:Clone()
+    NewDebug.Name = "Debug"..Order
+    NewDebug.LayoutOrder = Order
+    NewDebug.Parent = Example.Parent
+    return NewDebug
+end
+
 function FormatToNumber(text)
     text = string.gsub(string.gsub(text, " Value", ""), ",", "")
     for index,letter in pairs({"k", "M", "B", "T"}) do
@@ -249,25 +262,28 @@ function TweenDuration(pos1, pos2)
         (pos1.Z-pos2.Z)^2)
 end
 
-function TweenTo(Location, wait_to_end)
+function TweenTo(Info)
     local RootPart = LocalPlayer.Character.HumanoidRootPart
-    local duration = TweenDuration(Location, RootPart.Position)
-    local ti = TweenInfo.new(duration, Enum.EasingStyle.Linear)
-    game:GetService('TweenService'):Create(RootPart, ti, {CFrame = Location}):Play()
-    if wait_to_end then wait(duration) end
-    return duration
+    local Duration = TweenDuration(Info.Location, RootPart.Position)
+    if Info.Duration and Duration < Info.Duration then Duration = Info.Duration end
+    game:GetService("TweenService"):Create(RootPart, TweenInfo.new(Duration, Enum.EasingStyle.Linear), {CFrame = Info.Location}):Play()
+    return Duration
 end
 
 function TweenToEgg()
-    if Settings["EggToHatch"] == "Deactivated" then return end
-    local Egg = game:GetService("Workspace").Eggs[Settings["EggToHatch"]].EggName.CFrame
-    if Distance(LocalPlayer.Character.HumanoidRootPart.Position,Egg) <= 5 then return end
+    if Settings["EggToHatch"] == DisabledOption then return end
+    local Egg = Workspace.Eggs[Settings["EggToHatch"]]
+    local EggName = Egg.EggName.CFrame
+    local EggPrice = Egg.Price.CFrame
+    local lookVector = EggPrice.Position - EggName.Position
+    local TargetCFrame = CFrame.new(EggName.Position, EggName.Position + lookVector)
+    if Distance(LocalPlayer.Character.HumanoidRootPart.Position,TargetCFrame) <= 5 then return end
     for _,world in pairs(Data.Worlds) do
         local broke = false
         for _,egg in pairs(world.Eggs) do
             if Settings["EggToHatch"] == egg.Name then
-                local world_position = game:GetService("Workspace").Teleports[world.Name].Position
-                if Distance(LocalPlayer.Character.HumanoidRootPart.Position,Egg) > Distance(world_position,Egg) then
+                local world_position = Workspace.Teleports[world.Name].Position
+                if Distance(LocalPlayer.Character.HumanoidRootPart.Position,TargetCFrame) > Distance(world_position,TargetCFrame) then
                     ReplicatedStorage.Events.Teleport:FireServer(world.Name)
                     wait(1)
                 end
@@ -278,12 +294,49 @@ function TweenToEgg()
         if broke then break end
     end
     local pos = LocalPlayer.Character.HumanoidRootPart.Position
-    TweenTo(CFrame.new() + Vector3.new(pos.X,Egg.Y-100,pos.Z), true)
-    wait(0.2)
-    TweenTo(Egg - Vector3.new(0,100,0), true)
-    wait(0.2)
-    TweenTo(Egg + Vector3.new(0,8,0), true)
+    local height = 2000
+    wait(TweenTo({Location = CFrame.new(pos.X,height,pos.Z)}) + 0.3)
+    wait(TweenTo({Location = CFrame.new(TargetCFrame.X,height,TargetCFrame.Z)}) + 0.3)
+    wait(TweenTo({Location = TargetCFrame + Vector3.new(0,LocalPlayer.Character.Humanoid.HipHeight+1,0)}))
 end
+
+local TransformDimentions = Vector3.new(1, -1, 1)
+local v24 = Vector3.new(1 - Constants.ChunkSize, -1, 1 - Constants.ChunkSize) * Constants.CellSize
+local v25 = v24 / 2
+function WorldPositionToCell(WorldPosition)
+    local v57 = (WorldPosition - v25) * TransformDimentions
+    return Vector3.new(math.round(v57.X / Constants.CellSize), math.round(v57.Y / Constants.CellSize), math.round(v57.Z / Constants.CellSize)) + Vector3.new(1, 1, 1)
+end
+function CellToWorldPosition(Cell)
+    return ((Cell + Vector3.new(-1, -1, -1)) * Constants.CellSize) * TransformDimentions + v25
+end
+
+-- Debug Elements
+NewSpliter(17)
+local DebugBlocksUntilCollapse = NewDebug(18)
+local SignInfo = Workspace.Worlds["The Overworld"].Sign.Display.SurfaceGui.Info
+function UpdateBlocksUntilCollapse()
+    local BlocksUntilCollapseText = SignInfo.Text:gsub(" Blocks until Collapse", "")
+    local BlocksUntilCollapse = BlocksUntilCollapseText:gsub(",", "")
+    if tonumber(BlocksUntilCollapse) == nil then return end
+    local red = 255-math.floor(255 * (BlocksUntilCollapse / Constants.MinedBlocksResetLimit))
+    DebugBlocksUntilCollapse.Label.Text = "Blocks until Collapse: <font color='rgb("..red..", "..255-red..", 0)'>" .. BlocksUntilCollapseText .. "</font>"
+end
+local DebugBlocksUntilCollapseLabelUpdate = DebugBlocksUntilCollapse.Label:GetPropertyChangedSignal("TextBounds"):Connect(function()
+    DebugBlocksUntilCollapse.Size = UDim2.fromOffset(DebugBlocksUntilCollapse.Label.TextBounds.X / LocalPlayer.PlayerGui.ScreenGui.UIScale.Scale + 14, 40)
+end)
+local SignInfoUpdate = SignInfo:GetPropertyChangedSignal("Text"):Connect(UpdateBlocksUntilCollapse)
+spawn(function()
+    while wait(1) do
+        if DarkCavernInstanceId ~= _G.DarkCavernInstanceId then
+            DebugBlocksUntilCollapseLabelUpdate:Disconnect()
+            SignInfoUpdate:Disconnect()
+            break
+        end
+    end
+end)
+UpdateBlocksUntilCollapse()
+
 
 local Worlds = {}
 local Eggs = {}
@@ -328,12 +381,6 @@ if (readfile and isfile and isfile(ProfileSettingsName)) then
 elseif not isfile(ProfileSettingsName) then
     Print(4,"Profile settings were not found.",false)
 end
-
-if Settings["GoToEggOnStart"] then TweenToEgg() end
-
-if not _G.DarkCavernInstanceId then _G.DarkCavernInstanceId = 0
-else _G.DarkCavernInstanceId = _G.DarkCavernInstanceId + 1 end
-local DarkCavernInstanceId = _G.DarkCavernInstanceId
 
 local Elements = {}
 local Tabs = {
@@ -380,49 +427,6 @@ local Tabs = {
                     for _,type in pairs(Data.Achievements) do
                         ReplicatedStorage.Events.ClaimAchievementReward:FireServer(type)
                         wait(1)
-                    end
-                end,
-            },
-            {Name="LuckBoostEnabler",
-                Type = "Dropdown",
-                Options = {false, "Minimal", "Omega Limited"},
-                RepeatDelay = 10,
-                Callback = function(ElementData)
-                    if Settings[ElementData.Name] == "Minimal" then
-                        local InvalidBoosts = {}
-                        for k, v in pairs(Data.Boosts.Luck) do
-                            InvalidBoosts[k] = v
-                        end
-                        for _,active_boost in pairs(LocalData:GetData("ActiveBoosts")) do
-                            for _,boost in pairs(Data.Boosts.Luck) do
-                                if active_boost[1] == boost then
-                                    if active_boost[2] > 300 then
-                                        for index,invalid_boost in pairs(InvalidBoosts) do
-                                            if invalid_boost == boost then
-                                                table.remove(InvalidBoosts, index)
-                                            end
-                                        end
-                                    end
-                                    break
-                                end
-                            end
-                        end
-                        for _,invalid_boost in pairs(InvalidBoosts) do
-                            local LowestDuration = nil
-                            for _,inventory_boost in pairs(LocalData:GetData("BoostInventory")) do
-                                if inventory_boost[1] == invalid_boost then
-                                    if not LowestDuration or inventory_boost[2] < LowestDuration then
-                                        LowestDuration = inventory_boost[2]
-                                    end
-                                end
-                            end
-                            if LowestDuration then
-                                ReplicatedStorage.Events.UseBoost:FireServer(invalid_boost, LowestDuration)
-                            end
-                        end
-                    elseif Settings[ElementData.Name] == "Omega Limited" then
-                        Print(2,"The \"Omega Limited\" mode is comming soon",true)
-                        return true
                     end
                 end,
             },
@@ -486,65 +490,147 @@ local Tabs = {
     },
     {Name="Grinding",
         Elements = {
-            {Name="AutoMine",Type="Section"},
+            {Name="Mining",Type="Section"},
             {Name="MineSelection",
                 Type = "Toggle",
                 RepeatDelay = 0,
-                Callback = function()
-                    local Module = LoadModule("MineSelection")
-                    if Module:get() then
-                        local SelectedCell = Module:get().Cell
-                        ReplicatedStorage.Events.MineBlock:FireServer(SelectedCell)
-                        if Settings["DownFast"] then
-                            for i=0,Settings["DownFastAmount"] do
-                                wait(Settings["DownFastDelay"])
-                                ReplicatedStorage.Events.MineBlock:FireServer(SelectedCell+Vector3.new(0, i+1, 0))
+                Callback = function(ElementData)
+                    local Selection = MineSelection:get()
+                    if Selection then
+                        local SelectedCell = Selection.Cell
+                        ReplicatedStorage.Events.MineBlock:FireServer(SelectedCell)   
+                        if Settings["DownFast"] == "Reliable" then
+                            for i=1,6 do
+                                wait(Settings["DownFastExtraDelay"] * 0.01)
+                                ReplicatedStorage.Events.MineBlock:FireServer(SelectedCell + Vector3.new(0, i, 0))
                             end
+                            LocalPlayer.Character.HumanoidRootPart.Anchored = false
+                        elseif Settings["DownFast"] == "Beta" then
+                            local ElementInstanceId = ElementData.InstanceId
+                            -- local BatchCell = SelectedCell + Vector3.new(0, 6, 0)
+                            local NextCell = SelectedCell
+                            repeat
+                                local WorldPos = CellToWorldPosition(NextCell + Vector3.new(0, -1, 0))
+                                LocalPlayer.Character.HumanoidRootPart.Anchored = false
+                                wait(TweenTo({Location = CFrame.new(WorldPos)}))
+                                LocalPlayer.Character.HumanoidRootPart.Anchored = true
+                                NextCell = NextCell + Vector3.new(0, 1, 0)
+                                wait(0.14 + Settings["DownFastExtraDelay"]*0.01)
+                                ReplicatedStorage.Events.MineBlock:FireServer(NextCell)
+
+                                -- LocalPlayer.Character.HumanoidRootPart.Anchored = false
+                                -- wait(TweenTo({Location = CFrame.new(WorldPos), Duration = 0.1}))
+                                -- LocalPlayer.Character.HumanoidRootPart.Anchored = true
+                                -- for i=0,11 do
+                                --     wait(0.1)
+                                --     ReplicatedStorage.Events.MineBlock:FireServer(BatchCell + Vector3.new(0, i-5, 0))
+                                -- end
+                                -- BatchCell = BatchCell + Vector3.new(0, 10, 0)
+                                -- wait(0.1)
+                            until Settings["DownFast"] ~= "Beta" or not Settings["MineSelection"] or DarkCavernInstanceId ~= _G.DarkCavernInstanceId or ElementInstanceId~=ElementData.InstanceId
+                            LocalPlayer.Character.HumanoidRootPart.Anchored = false
                         end
                     end
                 end,
             },
             {Name="CollapseProtection",
                 Type = "Toggle",
-                RepeatDelay = 0,
-                Callback = function()
-                    local LastCFrame = LocalPlayer.Character.HumanoidRootPart.CFrame
-                    for i=1,10 do
+                Callback = function(Value, ElementData)
+                    local ElementInstanceId = ElementData.InstanceId
+                    local LastCFrame = nil
+                    local CollapseProtection = ReplicatedStorage.Events.MineCollapsed.OnClientEvent:Connect(function()
+                        print("LastCFrame:", LastCFrame)
+                        print("Current CFrame:", LocalPlayer.Character.HumanoidRootPart.CFrame)
+                        if DarkCavernInstanceId ~= _G.DarkCavernInstanceId or ElementInstanceId~=ElementData.InstanceId then return end
+                        local Cell = WorldPositionToCell(Vector3.new(LastCFrame.X,0,LastCFrame.Z))
+                        local Location = CFrame.new(CellToWorldPosition(Cell), LastCFrame.LookVector)
                         wait(1)
                         local Prompt = LocalPlayer.PlayerGui.ScreenGui:FindFirstChild("Prompt")
                         if Prompt and Prompt.Frame.Title.Text == "Collapsed!" then
                             LocalPlayer.PlayerGui.ScreenGui.Prompt:Destroy()
-                            LastCFrame = CFrame.new(Vector3.new(LastCFrame.X,LocalPlayer.Character.HumanoidRootPart.Position.Y,LastCFrame.Z),LastCFrame.LookVector)
-                            wait(35)
-                            local Under = CFrame.new(LocalPlayer.Character.HumanoidRootPart.Position.X,LastCFrame.Y-100,LocalPlayer.Character.HumanoidRootPart.Position.Z)
-                            TweenTo(Under, true)
-                            wait(0.1)
-                            TweenTo(CFrame.new(LastCFrame.X,Under.Y,LastCFrame.Z), true)
-                            wait(0.1)
-                            TweenTo(LastCFrame, true)
-                            break
-                        else LastCFrame = LocalPlayer.Character.HumanoidRootPart.CFrame end
-                    end
-                end,
+                        else return end
+                        wait(37)
+                        local CurrentPosition = LocalPlayer.Character.HumanoidRootPart.Position
+                        print("CurrentPosition:", CurrentPosition)
+                        local Height = 10000
+                        wait(TweenTo({Location = CFrame.new(CurrentPosition.X,Height,CurrentPosition.Z)}) + 0.3)
+                        wait(TweenTo({Location = CFrame.new(Location.X,Height,Location.Z)}) + 0.3)
+                        LocalPlayer.Character.HumanoidRootPart.Anchored = true
+                        wait(TweenTo({Location = Location + Vector3.new(0, 4+LocalPlayer.Character.Humanoid.HipHeight, 0)}) + 0.3)
+                        LocalPlayer.Character.HumanoidRootPart.Anchored = false
+                    end)
+                    repeat if LocalPlayer.Character.HumanoidRootPart.Position.Y < 0 then
+                            LastCFrame = LocalPlayer.Character.HumanoidRootPart.CFrame
+                        end
+                        wait(3)
+                    until not Settings["CollapseProtection"] or DarkCavernInstanceId ~= _G.DarkCavernInstanceId or ElementInstanceId~=ElementData.InstanceId
+                    CollapseProtection:Disconnect()
+                end
             },
             {Name="DownFast",
-                Type = "Toggle",
+                Type = "Dropdown",
+                Options = {DisabledOption, "Reliable", "Beta"},
             },
-            {Name="DownFastAmount",
+            {Name="DownFastExtraDelay",
                 Type = "Slider",
-                Range = {1, 10},
+                Range = {0, 100},
                 Increment = 1,
-                CurrentValue = 5,
-                Suffix = "Blocks",
+                Suffix = "Centiseconds",
             },
-            {Name="DownFastDelay",
-                Type = "Slider",
-                Range = {0, 1},
-                Increment = 0.01,
-                Suffix = "Seconds",
+            {Name="DeleteBlocks",Type="Section"},
+            {Name="DeleteStone",
+                Type = "Toggle",
+                Callback = function(Value, ElementData)
+                    local ElementInstanceId = ElementData.InstanceId
+                    local Blocks = LoadModule("Blocks")
+                    local DeleteStone = function(data)
+                        local BlocksToDelete = {}
+                        for _,data in pairs(data) do
+                            if Blocks[data[1]].Type == "Block" then
+                                table.insert(BlocksToDelete, data[1])
+                            end
+                        end
+                        ReplicatedStorage.Events.MultiDeleteOres:FireServer(BlocksToDelete)
+                    end
+                    local BackpackInventory = LocalData:GetData("BackpackInventory")
+                    DeleteStone(BackpackInventory)
+                    local DataChangedEvent = ReplicatedStorage.Events.DataChanged.OnClientEvent:Connect(function(name, data)
+                        if name == "BackpackInventory" then DeleteStone(data) end
+                    end)
+                    spawn(function()
+                        repeat wait(1) until not Settings["DeleteStone"] or DarkCavernInstanceId ~= _G.DarkCavernInstanceId or ElementInstanceId~=ElementData.InstanceId
+                        DataChangedEvent:Disconnect()
+                    end)
+                end,
             },
-
-            {Name="AutoRebirth",Type="Section"},
+            {Name="DeleteOres",
+                Type = "Toggle",
+                Callback = function(Value, ElementData)
+                    local ElementInstanceId = ElementData.InstanceId
+                    local Blocks = LoadModule("Blocks")
+                    local DeleteOres = function(data)
+                        local BlocksToDelete = {}
+                        for _,data in pairs(data) do
+                            if Blocks[data[1]].Type ~= "Block" then
+                                table.insert(BlocksToDelete, data[1])
+                            end
+                        end
+                        ReplicatedStorage.Events.MultiDeleteOres:FireServer(BlocksToDelete)
+                    end
+                    local BackpackInventory = LocalData:GetData("BackpackInventory")
+                    DeleteOres(BackpackInventory)
+                    local DataChangedEvent = ReplicatedStorage.Events.DataChanged.OnClientEvent:Connect(function(name, data)
+                        if name == "BackpackInventory" then DeleteOres(data) end
+                    end)
+                    spawn(function()
+                        repeat wait(1) until not Settings["DeleteOres"] or DarkCavernInstanceId ~= _G.DarkCavernInstanceId or ElementInstanceId~=ElementData.InstanceId
+                        DataChangedEvent:Disconnect()
+                    end)
+                end,
+            },
+            {Name="Rebirthing",Type="Section"},
+            -- notes:
+            -- GetRebirthCost
             {Name="Amount",
                 Type = "Slider",
                 Range = {0, 5},
@@ -576,10 +662,7 @@ local Tabs = {
                             end
                             wait(1)
                             if Settings["RebirthTeleportBack"] then
-                                local duration = TweenTo(Location, true)
-                                local MinWait = 2 - duration
-                                if MinWait < 0 then MinWait = 0 end
-                                wait(duration + MinWait)
+                                wait(TweenTo({Location = Location, Duration = 2}))
                             end
                         end
                     end
@@ -595,41 +678,10 @@ local Tabs = {
             {Name="AutoHatchEgg",Type="Section"},
             {Name="EggToHatch",
                 Type = "Dropdown",
-                Options = {false, unpack(Eggs)},
+                Options = {DisabledOption, unpack(Eggs)},
                 RepeatDelay = 0,
                 Callback = function()
-                    ReplicatedStorage.Events.OpenEgg:FireServer(Settings["EggToHatch"],Settings["TripleHatch"],true)
-                end,
-            },
-            {Name="TripleHatch",
-                Type = "Toggle",
-            },
-            {Name="DestroyHatchGui",
-                Type = "Toggle",
-                Callback = function()
-                    local HatchGui = game.ReplicatedStorage.ClientModules.Other.OpenEgg:FindFirstChild("HatchGui")
-                    if HatchGui then HatchGui:Destroy() end
-                end,
-            },
-            {Name="BackupEgg",
-                Type = "Dropdown",
-                Options = {false, unpack(Eggs)},
-                RepeatDelay = 10,
-                Callback = function()
-                    if Settings["EggsLeft"] ~= "Deactivated" then
-                        for _,world in pairs(Data.Worlds) do
-                            for _,egg in pairs(world.Eggs) do
-                                if Settings["EggToHatch"] == egg.Name then
-                                    local EggsLeft = math.floor(LocalData:GetData(world.Currency) / FormatToNumber(egg.Price))
-                                    if EggsLeft < 100 then
-                                        Elements.EggToHatch.Element:Set(Settings["BackupEggToHatch"])
-                                        Elements.BackupEggToHatch:Set("Deactivated")
-                                        TweenToEgg()
-                                    end
-                                end
-                            end
-                        end
-                    end
+                    ReplicatedStorage.Events.OpenEgg:FireServer(Settings["EggToHatch"],GetData.Passes["Triple Hatch"],true)
                 end,
             },
             {Name="GoToEggOnStart",
@@ -640,6 +692,77 @@ local Tabs = {
                 Callback = function()
                     TweenToEgg()
                 end
+            },
+            {Name="DestroyHatchGui",
+                Type = "Toggle",
+                Callback = function()
+                    local HatchGui = ReplicatedStorage.ClientModules.Other.OpenEgg:FindFirstChild("HatchGui")
+                    if HatchGui then HatchGui:Destroy() end
+                end,
+            },
+            {Name="BackupEgg",
+                Type = "Dropdown",
+                Options = {DisabledOption, unpack(Eggs)},
+                RepeatDelay = 10,
+                Callback = function()
+                    if Settings["EggsLeft"] ~= DisabledOption then
+                        for _,world in pairs(Data.Worlds) do
+                            for _,egg in pairs(world.Eggs) do
+                                if Settings["EggToHatch"] == egg.Name then
+                                    local EggsLeft = math.floor(LocalData:GetData(world.Currency) / FormatToNumber(egg.Price))
+                                    if EggsLeft < 100 then
+                                        Elements.EggToHatch.Element:Set(Settings["BackupEggToHatch"])
+                                        Elements.BackupEggToHatch:Set(DisabledOption)
+                                        TweenToEgg()
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end,
+            },
+            {Name="LuckBoostEnabler",
+                Type = "Dropdown",
+                Options = {DisabledOption, "Minimal", "Omega Limited"},
+                RepeatDelay = 60,
+                Callback = function(ElementData)
+                    if Settings[ElementData.Name] == "Minimal" then
+                        local InvalidBoosts = {}
+                        for k, v in pairs(Data.Boosts.Luck) do
+                            InvalidBoosts[k] = v
+                        end
+                        for _,active_boost in pairs(LocalData:GetData("ActiveBoosts")) do
+                            for _,boost in pairs(Data.Boosts.Luck) do
+                                if active_boost[1] == boost then
+                                    if active_boost[2] > 300 then
+                                        for index,invalid_boost in pairs(InvalidBoosts) do
+                                            if invalid_boost == boost then
+                                                table.remove(InvalidBoosts, index)
+                                            end
+                                        end
+                                    end
+                                    break
+                                end
+                            end
+                        end
+                        for _,invalid_boost in pairs(InvalidBoosts) do
+                            local LowestDuration = nil
+                            for _,inventory_boost in pairs(LocalData:GetData("BoostInventory")) do
+                                if inventory_boost[1] == invalid_boost then
+                                    if not LowestDuration or inventory_boost[2] < LowestDuration then
+                                        LowestDuration = inventory_boost[2]
+                                    end
+                                end
+                            end
+                            if LowestDuration then
+                                ReplicatedStorage.Events.UseBoost:FireServer(invalid_boost, LowestDuration)
+                            end
+                        end
+                    elseif Settings[ElementData.Name] == "Omega Limited" then
+                        Print(2,"The \"Omega Limited\" mode is comming soon",true)
+                        return true
+                    end
+                end,
             },
         },
     },
@@ -680,7 +803,7 @@ local Tabs = {
             {Name="OpenRemoteUi",
                 Type = "Button",
                 Callback = function()
-                    local Ui = game:GetService("Players")[username].PlayerGui.ScreenGui:FindFirstChild(Settings["RemoteUi's"])
+                    local Ui = Players.LocalPlayer.PlayerGui.ScreenGui:FindFirstChild(Settings["RemoteUi's"])
                     Ui.Visible = true
                     Ui.Frame.Close.Frame.Button.MouseButton1Click:Connect(function()
                         Ui.Visible = false
@@ -757,11 +880,15 @@ function Run(ElementData, DisabledState, Value)
     end
     ElementData.InstanceId = ElementData.InstanceId + 1
     local ElementInstanceId = ElementData.InstanceId
-    if ElementData.RepeatDelay and ElementData.RepeatDelay >= 0 then
-        spawn(function() repeat Print(4,"Executing cycle "..ElementData.Name,false) if ElementData.Callback(ElementData) then return end wait(ElementData.RepeatDelay)
-            until Settings[ElementData.Name] == DisabledState or ElementInstanceId~=ElementData.InstanceId or DarkCavernInstanceId~=_G.DarkCavernInstanceId 
-        end)
-    else Print(4,"Executing single "..ElementData.Name,false) ElementData.Callback(Value, ElementData) end
+    spawn(function()
+        if ElementData.RepeatDelay and ElementData.RepeatDelay >= 0 then
+            repeat Print(4,"Executing cycle "..ElementData.Name,false) if ElementData.Callback(ElementData) then return end wait(ElementData.RepeatDelay)
+            until Settings[ElementData.Name] == DisabledState or ElementInstanceId~=ElementData.InstanceId or DarkCavernInstanceId~=_G.DarkCavernInstanceId
+        else
+            Print(4,"Executing single "..ElementData.Name,false)
+            ElementData.Callback(Value, ElementData)
+        end
+    end)
 end
 
 function AsyncSetting(ElementData, Default)
@@ -796,9 +923,6 @@ for _,tab in Tabs do
                 Elements[elementData.Name] = {elementData=elementData,Element=Element}
                 if not elementData.Volatile then Element.Callback(Settings[elementData.Name]) end
             elseif elementData.Type == "Dropdown" then
-                for index,option in pairs(elementData.Options) do
-                    if not option then elementData.Options[index] = "Deactivated" end
-                end
                 local CurrentValue = AsyncSetting(elementData, elementData.Options[1])
                 local Element = Tab:CreateDropdown({
                     Name = Name..":",
@@ -806,7 +930,7 @@ for _,tab in Tabs do
                     CurrentOption = CurrentValue,
                     Callback = function(Value)
                         if not elementData.Volatile then Settings[elementData.Name] = Value[1] end
-                        Run(elementData, "Deactivated", Value[1])
+                        Run(elementData, DisabledOption, Value[1])
                     end
                 })
                 Elements[elementData.Name] = {elementData=elementData,Element=Element}
@@ -817,6 +941,7 @@ for _,tab in Tabs do
                     Name = Name..":",
                     Range = elementData.Range,
                     Increment = elementData.Increment,
+                    Suffix = elementData.Suffix,
                     CurrentValue = CurrentValue,
                     Callback = function(Value)
                         if type(Value) ~= "number" then Value = CurrentValue end
@@ -839,3 +964,4 @@ for _,tab in Tabs do
         end
     end
 end
+if Settings["GoToEggOnStart"] then TweenToEgg() end
