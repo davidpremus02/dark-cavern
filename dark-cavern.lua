@@ -539,8 +539,6 @@ local Tabs = {
                     local ElementInstanceId = ElementData.InstanceId
                     local LastCFrame = nil
                     local CollapseProtection = ReplicatedStorage.Events.MineCollapsed.OnClientEvent:Connect(function()
-                        print("LastCFrame:", LastCFrame)
-                        print("Current CFrame:", LocalPlayer.Character.HumanoidRootPart.CFrame)
                         if DarkCavernInstanceId ~= _G.DarkCavernInstanceId or ElementInstanceId~=ElementData.InstanceId then return end
                         local Cell = WorldPositionToCell(Vector3.new(LastCFrame.X,0,LastCFrame.Z))
                         local Location = CFrame.new(CellToWorldPosition(Cell), LastCFrame.LookVector)
@@ -549,9 +547,9 @@ local Tabs = {
                         if Prompt and Prompt.Frame.Title.Text == "Collapsed!" then
                             LocalPlayer.PlayerGui.ScreenGui.Prompt:Destroy()
                         else return end
-                        wait(37)
+                        wait(49)
+                        if not Settings["CollapseProtection"] then return end
                         local CurrentPosition = LocalPlayer.Character.HumanoidRootPart.Position
-                        print("CurrentPosition:", CurrentPosition)
                         local Height = 10000
                         wait(TweenTo({Location = CFrame.new(CurrentPosition.X,Height,CurrentPosition.Z)}) + 0.3)
                         wait(TweenTo({Location = CFrame.new(Location.X,Height,Location.Z)}) + 0.3)
