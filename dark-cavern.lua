@@ -188,9 +188,10 @@ end
 
 -- Stuff and stuff, yk?
 local Players = game:GetService("Players")
-local VirtualUser = game:GetService("VirtualUser")
 local Workspace = game:GetService("Workspace")
+local VirtualUser = game:GetService("VirtualUser")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
 local LoadModule = require(ReplicatedStorage.LoadModule)
 local LocalData = LoadModule("LocalData")
 local Constants = LoadModule("Constants")
@@ -294,9 +295,9 @@ function TweenToEgg()
         if broke then break end
     end
     local pos = LocalPlayer.Character.HumanoidRootPart.Position
-    local height = 2000
-    wait(TweenTo({Location = CFrame.new(pos.X,height,pos.Z)}) + 0.3)
-    wait(TweenTo({Location = CFrame.new(TargetCFrame.X,height,TargetCFrame.Z)}) + 0.3)
+    local Height = 2000
+    wait(TweenTo({Location = CFrame.new(pos.X,Height,pos.Z)}) + 0.3)
+    wait(TweenTo({Location = CFrame.new(TargetCFrame.X,Height,TargetCFrame.Z)}) + 0.3)
     wait(TweenTo({Location = TargetCFrame + Vector3.new(0,LocalPlayer.Character.Humanoid.HipHeight+1,0)}))
 end
 
@@ -320,6 +321,7 @@ function UpdateBlocksUntilCollapse()
     local BlocksUntilCollapse = BlocksUntilCollapseText:gsub(",", "")
     if tonumber(BlocksUntilCollapse) == nil then return end
     local red = 255-math.floor(255 * (BlocksUntilCollapse / Constants.MinedBlocksResetLimit))
+    if not DebugBlocksUntilCollapse.Label then return end
     DebugBlocksUntilCollapse.Label.Text = "Blocks until Collapse: <font color='rgb("..red..", "..255-red..", 0)'>" .. BlocksUntilCollapseText .. "</font>"
 end
 local DebugBlocksUntilCollapseLabelUpdate = DebugBlocksUntilCollapse.Label:GetPropertyChangedSignal("TextBounds"):Connect(function()
@@ -490,51 +492,55 @@ local Tabs = {
     },
     {Name="Grinding",
         Elements = {
-            {Name="Mining",Type="Section"},
-            {Name="MineSelection",
-                Type = "Toggle",
+            {Name="AutoMining",Type="Section"},
+            {Name="Mining",
+                Type = "Dropdown",
+                Options = {DisabledOption, "Selection", "Block Below"},
                 RepeatDelay = 0,
                 Callback = function(ElementData)
-                    local Selection = MineSelection:get()
-                    if Selection then
-                        local SelectedCell = Selection.Cell
-                        if Settings["SpeedMining"] == "Detective" then
-                            for i=0,6 do
-                                wait(Settings["SpeedMiningExtraDelay"] * 0.01)
-                                ReplicatedStorage.Events.MineBlock:FireServer(SelectedCell + Vector3.new(0, i, 0))
-                            end
-                        elseif Settings["SpeedMining"] == "Stripper" then
-                            for x=0,5 do
-                                wait(Settings["SpeedMiningExtraDelay"] * 0.01)
-                                ReplicatedStorage.Events.MineBlock:FireServer(SelectedCell + Vector3.new(x, 0, 0))
-                            end
-                        elseif Settings["SpeedMining"] == "Retard" then
-                            local ElementInstanceId = ElementData.InstanceId
-                            -- local BatchCell = SelectedCell + Vector3.new(0, 6, 0)
-                            local NextCell = SelectedCell
-                            repeat
-                                local WorldPos = CellToWorldPosition(NextCell + Vector3.new(0, -2, 0))
-                                LocalPlayer.Character.HumanoidRootPart.Anchored = false
-                                wait(TweenTo({Location = CFrame.new(WorldPos)}))
-                                LocalPlayer.Character.HumanoidRootPart.Anchored = true
-                                wait(0.14 + Settings["SpeedMiningExtraDelay"]*0.01)
-                                ReplicatedStorage.Events.MineBlock:FireServer(NextCell)
-                                NextCell = NextCell + Vector3.new(0, 1, 0)
+                    local Cell = nil
+                    if Settings["Mining"] == "Selection" then
+                        Cell = MineSelection:get()
+                        if not Cell then return end
+                    elseif Settings["Mining"] == "Block Below" then
+                        local Params = RaycastParams.new()
+                        Params.CollisionGroup = Constants.CollisionGroups.MineRaycast
+                        local RaycastResult = Workspace:Raycast(LocalPlayer.Character.HumanoidRootPart.Position, Vector3.new(0, -Constants.MaxSelectionDistance, 0), Params)
+                        if not RaycastResult then return end
+                        Cell = WorldPositionToCell(RaycastResult.Position - RaycastResult.Normal)
+                    else return end
 
-                                -- LocalPlayer.Character.HumanoidRootPart.Anchored = false
-                                -- wait(TweenTo({Location = CFrame.new(WorldPos), Duration = 0.1}))
-                                -- LocalPlayer.Character.HumanoidRootPart.Anchored = true
-                                -- for i=0,11 do
-                                --     wait(0.1)
-                                --     ReplicatedStorage.Events.MineBlock:FireServer(BatchCell + Vector3.new(0, i-5, 0))
-                                -- end
-                                -- BatchCell = BatchCell + Vector3.new(0, 10, 0)
-                                -- wait(0.1)
-                            until Settings["SpeedMining"] ~= "Retard" or not Settings["MineSelection"] or DarkCavernInstanceId ~= _G.DarkCavernInstanceId or ElementInstanceId~=ElementData.InstanceId
-                            LocalPlayer.Character.HumanoidRootPart.Anchored = false
-                        else
-                            ReplicatedStorage.Events.MineBlock:FireServer(SelectedCell)
+                    if Settings["MiningMode"] == "Stripper" then
+                        for x=-5,0 do
+                            wait(Settings["MiningModeExtraDelay"] * 0.01)
+                            ReplicatedStorage.Events.MineBlock:FireServer(Cell + Vector3.new(x, 0, 0))
                         end
+                    elseif Settings["MiningMode"] == "Retard" then
+                        local ElementInstanceId = ElementData.InstanceId
+                        -- local BatchCell = SelectedCell + Vector3.new(0, 6, 0)
+                        local NextCell = Cell
+                        repeat
+                            local WorldPos = CellToWorldPosition(NextCell + Vector3.new(0, -2, 0))
+                            LocalPlayer.Character.HumanoidRootPart.Anchored = false
+                            wait(TweenTo({Location = CFrame.new(WorldPos)}))
+                            LocalPlayer.Character.HumanoidRootPart.Anchored = true
+                            wait(0.14 + Settings["MiningModeExtraDelay"]*0.01)
+                            ReplicatedStorage.Events.MineBlock:FireServer(NextCell)
+                            NextCell = NextCell + Vector3.new(0, 1, 0)
+
+                            -- LocalPlayer.Character.HumanoidRootPart.Anchored = false
+                            -- wait(TweenTo({Location = CFrame.new(WorldPos), Duration = 0.1}))
+                            -- LocalPlayer.Character.HumanoidRootPart.Anchored = true
+                            -- for i=0,11 do
+                            --     wait(0.1)
+                            --     ReplicatedStorage.Events.MineBlock:FireServer(BatchCell + Vector3.new(0, i-5, 0))
+                            -- end
+                            -- BatchCell = BatchCell + Vector3.new(0, 10, 0)
+                            -- wait(0.1)
+                        until Settings["MiningMode"] ~= "Retard" or Settings["Mining"] == DisabledOption or DarkCavernInstanceId ~= _G.DarkCavernInstanceId or ElementInstanceId~=ElementData.InstanceId
+                        LocalPlayer.Character.HumanoidRootPart.Anchored = false
+                    else
+                        ReplicatedStorage.Events.MineBlock:FireServer(Cell)
                     end
                 end,
             },
@@ -555,12 +561,10 @@ local Tabs = {
                         wait(49)
                         if not Settings["CollapseProtection"] then return end
                         local CurrentPosition = LocalPlayer.Character.HumanoidRootPart.Position
-                        local Height = 10000
+                        local Height = 2000
                         wait(TweenTo({Location = CFrame.new(CurrentPosition.X,Height,CurrentPosition.Z)}) + 0.3)
                         wait(TweenTo({Location = CFrame.new(Location.X,Height,Location.Z)}) + 0.3)
-                        LocalPlayer.Character.HumanoidRootPart.Anchored = true
                         wait(TweenTo({Location = Location + Vector3.new(0, 4+LocalPlayer.Character.Humanoid.HipHeight, 0)}) + 0.3)
-                        LocalPlayer.Character.HumanoidRootPart.Anchored = false
                     end)
                     repeat if LocalPlayer.Character.HumanoidRootPart.Position.Y < 0 then
                             LastCFrame = LocalPlayer.Character.HumanoidRootPart.CFrame
@@ -570,11 +574,11 @@ local Tabs = {
                     CollapseProtection:Disconnect()
                 end
             },
-            {Name="SpeedMining",
+            {Name="MiningMode",
                 Type = "Dropdown",
-                Options = {DisabledOption, "Detective", "Stripper", "Retard"},
+                Options = {DisabledOption, "Stripper", "Retard"},
             },
-            {Name="SpeedMiningExtraDelay",
+            {Name="MiningModeExtraDelay",
                 Type = "Slider",
                 Range = {0, 100},
                 Increment = 1,
@@ -634,7 +638,7 @@ local Tabs = {
             {Name="Rebirthing",Type="Section"},
             -- notes:
             -- GetRebirthCost
-            {Name="Amount",
+            {Name="RebirthAmount",
                 Type = "Slider",
                 Range = {0, 5},
                 Increment = 1,
