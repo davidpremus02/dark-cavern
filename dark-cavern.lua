@@ -1,6 +1,5 @@
 if game.PlaceId ~= 9551640993 then return end
 repeat task.wait(0.1) until game:IsLoaded()
-print("yes!")
 
 --------------------------------------------------------------
 local Debug = false
