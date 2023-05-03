@@ -498,25 +498,28 @@ local Tabs = {
                     local Selection = MineSelection:get()
                     if Selection then
                         local SelectedCell = Selection.Cell
-                        ReplicatedStorage.Events.MineBlock:FireServer(SelectedCell)   
-                        if Settings["DownFast"] == "Reliable" then
-                            for i=1,6 do
-                                wait(Settings["DownFastExtraDelay"] * 0.01)
+                        if Settings["SpeedMining"] == "Detective" then
+                            for i=0,6 do
+                                wait(Settings["SpeedMiningExtraDelay"] * 0.01)
                                 ReplicatedStorage.Events.MineBlock:FireServer(SelectedCell + Vector3.new(0, i, 0))
                             end
-                            LocalPlayer.Character.HumanoidRootPart.Anchored = false
-                        elseif Settings["DownFast"] == "Beta" then
+                        elseif Settings["SpeedMining"] == "Stripper" then
+                            for x=0,5 do
+                                wait(Settings["SpeedMiningExtraDelay"] * 0.01)
+                                ReplicatedStorage.Events.MineBlock:FireServer(SelectedCell + Vector3.new(x, 0, 0))
+                            end
+                        elseif Settings["SpeedMining"] == "Retard" then
                             local ElementInstanceId = ElementData.InstanceId
                             -- local BatchCell = SelectedCell + Vector3.new(0, 6, 0)
                             local NextCell = SelectedCell
                             repeat
-                                local WorldPos = CellToWorldPosition(NextCell + Vector3.new(0, -1, 0))
+                                local WorldPos = CellToWorldPosition(NextCell + Vector3.new(0, -2, 0))
                                 LocalPlayer.Character.HumanoidRootPart.Anchored = false
                                 wait(TweenTo({Location = CFrame.new(WorldPos)}))
                                 LocalPlayer.Character.HumanoidRootPart.Anchored = true
-                                NextCell = NextCell + Vector3.new(0, 1, 0)
-                                wait(0.14 + Settings["DownFastExtraDelay"]*0.01)
+                                wait(0.14 + Settings["SpeedMiningExtraDelay"]*0.01)
                                 ReplicatedStorage.Events.MineBlock:FireServer(NextCell)
+                                NextCell = NextCell + Vector3.new(0, 1, 0)
 
                                 -- LocalPlayer.Character.HumanoidRootPart.Anchored = false
                                 -- wait(TweenTo({Location = CFrame.new(WorldPos), Duration = 0.1}))
@@ -527,8 +530,10 @@ local Tabs = {
                                 -- end
                                 -- BatchCell = BatchCell + Vector3.new(0, 10, 0)
                                 -- wait(0.1)
-                            until Settings["DownFast"] ~= "Beta" or not Settings["MineSelection"] or DarkCavernInstanceId ~= _G.DarkCavernInstanceId or ElementInstanceId~=ElementData.InstanceId
+                            until Settings["SpeedMining"] ~= "Retard" or not Settings["MineSelection"] or DarkCavernInstanceId ~= _G.DarkCavernInstanceId or ElementInstanceId~=ElementData.InstanceId
                             LocalPlayer.Character.HumanoidRootPart.Anchored = false
+                        else
+                            ReplicatedStorage.Events.MineBlock:FireServer(SelectedCell)
                         end
                     end
                 end,
@@ -565,11 +570,11 @@ local Tabs = {
                     CollapseProtection:Disconnect()
                 end
             },
-            {Name="DownFast",
+            {Name="SpeedMining",
                 Type = "Dropdown",
-                Options = {DisabledOption, "Reliable", "Beta"},
+                Options = {DisabledOption, "Detective", "Stripper", "Retard"},
             },
-            {Name="DownFastExtraDelay",
+            {Name="SpeedMiningExtraDelay",
                 Type = "Slider",
                 Range = {0, 100},
                 Increment = 1,
