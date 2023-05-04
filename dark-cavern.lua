@@ -513,23 +513,39 @@ local Tabs = {
                         if not Selection then return end
                         Cell = Selection.Cell
                     elseif Settings["Mining"] == "Block Below" then
-                        local RaycastResult = Workspace:Raycast(LocalPlayer.Character.HumanoidRootPart.Position, Vector3.new(0, -Constants.MaxSelectionDistance, 0), MineRaycastParms)
-                        if not RaycastResult then return end
-                        Cell = WorldPositionToCell(RaycastResult.Position - RaycastResult.Normal)
+                        local raycastResult = Workspace:Raycast(LocalPlayer.Character.HumanoidRootPart.Position, Vector3.new(0, -Constants.MaxSelectionDistance, 0), MineRaycastParms)
+                        if not raycastResult then return end
+                        if raycastResult.Instance.Parent.Parent.Name ~= "Chunks" then return end
+                        Cell = WorldPositionToCell(raycastResult.Position - raycastResult.Normal)
                         if not Cell then return end
                     else return end
                     if Settings["TeleportToCell"] then
-                        TweenTo({Location = CFrame.new(CellToWorldPosition(Cell)) + Vector3.new(0, LocalPlayer.Character.Humanoid.HipHeight, 0)})
+                        local duration = TweenTo({Location = CFrame.new(CellToWorldPosition(Cell)) + Vector3.new(0, LocalPlayer.Character.Humanoid.HipHeight, 0)})
+                        if duration > 0 then wait(duration) end
                     end
                     if Settings["StripMine"] then
-                        for x=-5,0 do
-                            wait(Settings["MiningModeExtraDelay"] * 0.01)
-                            ReplicatedStorage.Events.MineBlock:FireServer(Cell + Vector3.new(x, 0, 0))
+                        local ElementInstanceId = ElementData.InstanceId
+                        local raycastResult = Workspace:Raycast(CellToWorldPosition(Cell + Vector3.new(-1, 0, 0)), Vector3.new(Constants.MaxSelectionDistance, 0, 0), MineRaycastParms)
+                        while raycastResult and Settings["StripMine"] and Settings["Mining"] ~= DisabledOption and DarkCavernInstanceId == _G.DarkCavernInstanceId and ElementInstanceId == ElementData.InstanceId do
+                            if raycastResult.Instance.Parent.Parent.Name ~= "Chunks" then break end
+                            local NextCell = WorldPositionToCell(raycastResult.Position - raycastResult.Normal)
+                            local Distance = math.abs(Cell.X - NextCell.X)
+                            for index=0, Constants.MaxSelectionDistance / Constants.CellSize - Distance do
+                                ReplicatedStorage.Events.MineBlock:FireServer(NextCell + Vector3.new(index, 0, 0))
+                                wait(Constants.MinMiningTime)
+                            end
+                            raycastResult = Workspace:Raycast(CellToWorldPosition(Cell + Vector3.new(-1, 0, 0)), Vector3.new(Constants.MaxSelectionDistance, 0, 0), MineRaycastParms)
                         end
                     else
                         ReplicatedStorage.Events.MineBlock:FireServer(Cell)
                     end
                 end,
+            },
+            {Name="TeleportToCell",
+                Type = "Toggle",
+            },
+            {Name="StripMine",
+                Type = "Toggle",
             },
             {Name="CollapseProtection",
                 Type = "Toggle",
@@ -560,18 +576,6 @@ local Tabs = {
                     until not Settings["CollapseProtection"] or DarkCavernInstanceId ~= _G.DarkCavernInstanceId or ElementInstanceId~=ElementData.InstanceId
                     CollapseProtection:Disconnect()
                 end
-            },
-            {Name="TeleportToCell",
-                Type = "Toggle",
-            },
-            {Name="StripMine",
-                Type = "Toggle",
-            },
-            {Name="MiningModeExtraDelay",
-                Type = "Slider",
-                Range = {0, 100},
-                Increment = 1,
-                Suffix = "Centiseconds",
             },
             {Name="DeleteBlocks",Type="Section"},
             {Name="DeleteStone",
