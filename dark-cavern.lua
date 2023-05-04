@@ -248,12 +248,15 @@ function NewDebug(Order)
     return NewDebug
 end
 
-function FormatToNumber(text)
+function FormatToNumber(text, FormatParms)
+    if not FormatParms then FormatParms = {} end
     text = string.gsub(string.gsub(text, " Value", ""), ",", "")
     for index,letter in pairs({"k", "M", "B", "T"}) do
         if string.find(text, letter) then
             text = string.gsub(text, letter, "")
-            return tonumber(text) * 1000^index
+            local number = tonumber(text)
+            if FormatParms.Floor then number = math.floor(number) end
+            return number * 1000^index
         end
     end
     return tonumber(text)
@@ -347,6 +350,32 @@ spawn(function()
     end
 end)
 UpdateBlocksUntilCollapse()
+
+local Speedometer = NewDebug(19)
+local SpeedometerLabelUpdate = Speedometer.Label:GetPropertyChangedSignal("TextBounds"):Connect(function()
+    Speedometer.Size = UDim2.fromOffset(Speedometer.Label.TextBounds.X / LocalPlayer.PlayerGui.ScreenGui.UIScale.Scale + 14, 40)
+end)
+spawn(function()
+    local SpeedSamples = {}
+    repeat
+        local Sum = 0
+        for _,SpeedSample in ipairs(SpeedSamples) do
+            Sum = Sum + SpeedSample
+        end
+        local AverageSpeed = math.round(Sum / #SpeedSamples)
+        local red = math.round(math.min(AverageSpeed, 30)/30)
+        local green = 1-red
+        Speedometer.Label.Text = "Vertical Speed: <font color='rgb("..(red*255)..", "..(green*255)..", 0)'>"..AverageSpeed.." Studs/s</font>"
+        local YBegin = LocalPlayer.Character.HumanoidRootPart.Position.Y
+        wait((Settings["SampleRate"] or 0.1))
+        local YEnd = LocalPlayer.Character.HumanoidRootPart.Position.Y
+        table.insert(SpeedSamples, math.abs(YBegin-YEnd)/(Settings["SampleRate"] or 0.1))
+        if #SpeedSamples > (Settings["SampleLimit"] or 10) then
+            table.remove(SpeedSamples, 1)
+        end
+    until DarkCavernInstanceId ~= _G.DarkCavernInstanceId
+    SpeedometerLabelUpdate:Disconnect()
+end)
 
 
 local Worlds = {}
@@ -522,14 +551,17 @@ local Tabs = {
                     else return end
                     if Settings["TeleportToCell"] then
                         if CellParentName == "Chunks" then
+                            LocalPlayer.Character.Humanoid.PlatformStand = true
                             local duration = TweenTo({Location = CFrame.new(CellToWorldPosition(Cell)) + Vector3.new(0, LocalPlayer.Character.Humanoid.HipHeight, 0)})
                             if duration > 0 then wait(duration) end
                         end
+                    else
+                        LocalPlayer.Character.Humanoid.PlatformStand = false
                     end
                     if Settings["StripMine"] then
                         local ElementInstanceId = ElementData.InstanceId
                         local raycastResult = Workspace:Raycast(CellToWorldPosition(Cell + Vector3.new(-1, 0, 0)), Vector3.new(Constants.MaxSelectionDistance, 0, 0), MineRaycastParms)
-                        if raycastResult.Instance.Parent.Parent.Name == "Chunks" then
+                        if raycastResult and raycastResult.Instance.Parent.Parent.Name == "Chunks" then
                             while raycastResult and Settings["StripMine"] and Settings["Mining"] ~= DisabledOption and DarkCavernInstanceId == _G.DarkCavernInstanceId and ElementInstanceId == ElementData.InstanceId do
                                 if raycastResult.Instance.Parent.Parent.Name ~= "Chunks" then break end
                                 local NextCell = WorldPositionToCell(raycastResult.Position - raycastResult.Normal)
@@ -541,6 +573,11 @@ local Tabs = {
                                 raycastResult = Workspace:Raycast(CellToWorldPosition(Cell + Vector3.new(-1, 0, 0)), Vector3.new(Constants.MaxSelectionDistance, 0, 0), MineRaycastParms)
                             end
                         else ReplicatedStorage.Events.MineBlock:FireServer(Cell) end
+                    elseif Settings["Mining"] == "Block Below" then
+                        for index=0,Constants.MaxSelectionDistance / Constants.CellSize do
+                            ReplicatedStorage.Events.MineBlock:FireServer(Cell + Vector3.new(0, index, 0))
+                            wait(0)
+                        end
                     else
                         ReplicatedStorage.Events.MineBlock:FireServer(Cell)
                     end
@@ -636,42 +673,41 @@ local Tabs = {
             {Name="Rebirthing",Type="Section"},
             -- notes:
             -- GetRebirthCost
-            {Name="RebirthAmount",
-                Type = "Slider",
-                Range = {0, 5},
-                Increment = 1,
-                Suffix = "Rebirths",
+            {Name="Rebirth",
+                Type="Toggle",
                 Callback = function(Value, ElementData)
-                    if Settings[ElementData.Name] == 0 then return end
                     local ElementInstanceId = ElementData.InstanceId
                     ReplicatedStorage.Events.Teleport:FireServer("Mystic CavernSell")
-                    while wait(0.1) do
-                        if Settings[ElementData.Name] == 0 or ElementInstanceId~=ElementData.InstanceId or DarkCavernInstanceId~=_G.DarkCavernInstanceId then return end
+                    repeat
+                        wait(0.1)
+                        local RebirthAmount = GetData.GemEnchantments["Multi Rebirth"] + 1
                         local Coins = LocalPlayer.PlayerGui.ScreenGui.Inventory.Frame.Container.Ores.Bottom.Coins
                         local Have = LocalData:GetData("Coins")
-                        if Coins.Visible == true then Have = Have + FormatToNumber(Coins.Label.Text) end
+                        if Coins.Visible == true then Have = Have + FormatToNumber(Coins.Label.Text, {Floor = true}) end
+
                         local Need = nil
-                        if Settings[ElementData.Name] == 1 then
+                        if RebirthAmount == 1 then
                             Need = FormatToNumber(LocalPlayer.PlayerGui.ScreenGui.Rebirth.Frame.Buy.Frame.Container.Label.Text)
                         else
-                            Need = FormatToNumber(LocalPlayer.PlayerGui.ScreenGui.Rebirth.Multi.Options[Settings[ElementData.Name]].Button.Frame.Label.Text)
+                            Need = FormatToNumber(LocalPlayer.PlayerGui.ScreenGui.Rebirth.Multi.Options[RebirthAmount].Button.Frame.Label.Text)
                         end
                         if Have >= Need then
                             local Location = LocalPlayer.Character.HumanoidRootPart.CFrame
                             ReplicatedStorage.Events.Teleport:FireServer("Mystic CavernSell")
                             ReplicatedStorage.Events.QuickSell:FireServer()
-                            if Settings[ElementData.Name] == 1 then
+                            if RebirthAmount == 1 then
                                 ReplicatedStorage.Events.Rebirth:FireServer()
                             else
-                                ReplicatedStorage.Events.MultiRebirth:FireServer(Settings[ElementData.Name]) 
+                                ReplicatedStorage.Events.MultiRebirth:FireServer(RebirthAmount)
                             end
                             wait(1)
                             if Settings["RebirthTeleportBack"] then
-                                wait(TweenTo({Location = Location, Duration = 2}))
+                                local Duration = TweenTo({Location = Location})
+                                if Duration < 2 then wait(2) else wait(Duration) end
                             end
                         end
-                    end
-                end,
+                    until not Settings[ElementData.Name] or ElementInstanceId ~= ElementData.InstanceId or DarkCavernInstanceId ~= _G.DarkCavernInstanceId
+                end
             },
             {Name="RebirthTeleportBack",
                 Type = "Toggle",
@@ -828,6 +864,19 @@ local Tabs = {
                         end
                     end
                 end,
+            },
+            {Name="Speedometer",Type="Section"},
+            {Name="SampleLimit",
+                Type = "Slider",
+                Range = {1, 100},
+                Increment = 1,
+                CurrentValue = 10
+            },
+            {Name="SampleRate",
+                Type = "Slider",
+                Range = {0.03, 1},
+                Increment = 0.01,
+                CurrentValue = 0.1
             },
             {Name="OtherGuis",Type="Section"},
             {Name="Zeerox'sGui",
