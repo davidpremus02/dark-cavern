@@ -508,6 +508,7 @@ local Tabs = {
                 RepeatDelay = 0,
                 Callback = function(ElementData)
                     local Cell = nil
+                    local CellParentName = nil
                     if Settings["Mining"] == "Selection" then
                         local Selection = MineSelection:get()
                         if not Selection then return end
@@ -515,27 +516,31 @@ local Tabs = {
                     elseif Settings["Mining"] == "Block Below" then
                         local raycastResult = Workspace:Raycast(LocalPlayer.Character.HumanoidRootPart.Position, Vector3.new(0, -Constants.MaxSelectionDistance, 0), MineRaycastParms)
                         if not raycastResult then return end
-                        if raycastResult.Instance.Parent.Parent.Name ~= "Chunks" then return end
+                        CellParentName = raycastResult.Instance.Parent.Parent.Name
                         Cell = WorldPositionToCell(raycastResult.Position - raycastResult.Normal)
                         if not Cell then return end
                     else return end
                     if Settings["TeleportToCell"] then
-                        local duration = TweenTo({Location = CFrame.new(CellToWorldPosition(Cell)) + Vector3.new(0, LocalPlayer.Character.Humanoid.HipHeight, 0)})
-                        if duration > 0 then wait(duration) end
+                        if CellParentName == "Chunks" then
+                            local duration = TweenTo({Location = CFrame.new(CellToWorldPosition(Cell)) + Vector3.new(0, LocalPlayer.Character.Humanoid.HipHeight, 0)})
+                            if duration > 0 then wait(duration) end
+                        end
                     end
                     if Settings["StripMine"] then
                         local ElementInstanceId = ElementData.InstanceId
                         local raycastResult = Workspace:Raycast(CellToWorldPosition(Cell + Vector3.new(-1, 0, 0)), Vector3.new(Constants.MaxSelectionDistance, 0, 0), MineRaycastParms)
-                        while raycastResult and Settings["StripMine"] and Settings["Mining"] ~= DisabledOption and DarkCavernInstanceId == _G.DarkCavernInstanceId and ElementInstanceId == ElementData.InstanceId do
-                            if raycastResult.Instance.Parent.Parent.Name ~= "Chunks" then break end
-                            local NextCell = WorldPositionToCell(raycastResult.Position - raycastResult.Normal)
-                            local Distance = math.abs(Cell.X - NextCell.X)
-                            for index=0, Constants.MaxSelectionDistance / Constants.CellSize - Distance do
-                                ReplicatedStorage.Events.MineBlock:FireServer(NextCell + Vector3.new(index, 0, 0))
-                                wait(Constants.MinMiningTime)
+                        if raycastResult.Instance.Parent.Parent.Name == "Chunks" then
+                            while raycastResult and Settings["StripMine"] and Settings["Mining"] ~= DisabledOption and DarkCavernInstanceId == _G.DarkCavernInstanceId and ElementInstanceId == ElementData.InstanceId do
+                                if raycastResult.Instance.Parent.Parent.Name ~= "Chunks" then break end
+                                local NextCell = WorldPositionToCell(raycastResult.Position - raycastResult.Normal)
+                                local Distance = math.abs(Cell.X - NextCell.X)
+                                for index=0, Constants.MaxSelectionDistance / Constants.CellSize - Distance do
+                                    ReplicatedStorage.Events.MineBlock:FireServer(NextCell + Vector3.new(index, 0, 0))
+                                    wait(Constants.MinMiningTime)
+                                end
+                                raycastResult = Workspace:Raycast(CellToWorldPosition(Cell + Vector3.new(-1, 0, 0)), Vector3.new(Constants.MaxSelectionDistance, 0, 0), MineRaycastParms)
                             end
-                            raycastResult = Workspace:Raycast(CellToWorldPosition(Cell + Vector3.new(-1, 0, 0)), Vector3.new(Constants.MaxSelectionDistance, 0, 0), MineRaycastParms)
-                        end
+                        else ReplicatedStorage.Events.MineBlock:FireServer(Cell) end
                     else
                         ReplicatedStorage.Events.MineBlock:FireServer(Cell)
                     end
